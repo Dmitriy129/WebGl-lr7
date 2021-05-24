@@ -1,12 +1,10 @@
-import * as THREE from "./libs/opengl.module.js";
+import * as MYGLAPI from "./libs/opengl.module.js";
 
 import { GUI } from "./libs/dat.gui.module.js";
 
 import { OrbitControls } from "./controls/OrbitControls.js";
-import { TeapotGeometry } from "./geometries/UmbrellaGeometry.js";
 import { Geometry as Part1Geometry } from "./geometries/part1/Geometry.js";
 import { Geometry as Part2Geometry } from "./geometries/part2/Geometry.js";
-import { Geometry as Part3Geometry } from "./geometries/part3/Geometry.js";
 
 let camera, scene, renderer;
 let cameraControls;
@@ -28,9 +26,27 @@ let wireMaterial,
   texturedMaterial;
 
 let teapot, textureCube;
+let mainUmbrella;
 
-const diffuseColor = new THREE.Color();
-const specularColor = new THREE.Color();
+const diffuseColor = new MYGLAPI.Color();
+const specularColor = new MYGLAPI.Color();
+const textures = {
+  part1Texs: [
+    createTextureMaterial("p1_1.jpg"),
+    createTextureMaterial("p1_2.jpg"),
+    createTextureMaterial("p1_3.jpg"),
+    createTextureMaterial("p1_4.jpg"),
+    createTextureMaterial("p1_1.jpg"),
+    createTextureMaterial("p1_2.jpg"),
+    createTextureMaterial("p1_3.jpg"),
+    createTextureMaterial("p1_4.jpg"),
+  ],
+  part2Tex: createTextureMaterial("wood1.jpeg"),
+  part3Tex: createTextureMaterial("wood1.jpeg"),
+  part4Tex: createTextureMaterial("gold1.jpeg"),
+  part5Tex: createTextureMaterial("tex2.jpeg"),
+  part6Tex: createTextureMaterial("wood2.jpeg"),
+};
 
 init();
 render();
@@ -42,7 +58,7 @@ function init() {
   const canvasWidth = window.innerWidth;
   const canvasHeight = window.innerHeight;
 
-  camera = new THREE.PerspectiveCamera(
+  camera = new MYGLAPI.PerspectiveCamera(
     45,
     window.innerWidth / window.innerHeight,
     1,
@@ -50,14 +66,14 @@ function init() {
   );
   camera.position.set(-600, 550, 1300);
 
-  ambientLight = new THREE.AmbientLight(0x333333);
+  ambientLight = new MYGLAPI.AmbientLight(0x333333);
 
-  light = new THREE.DirectionalLight(0xffffff, 1.0);
+  light = new MYGLAPI.DirectionalLight(0xffffff, 1.0);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer = new MYGLAPI.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(canvasWidth, canvasHeight);
-  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.outputEncoding = MYGLAPI.sRGBEncoding;
   container.appendChild(renderer.domElement);
 
   window.addEventListener("resize", onWindowResize);
@@ -65,55 +81,47 @@ function init() {
   cameraControls = new OrbitControls(camera, renderer.domElement);
   cameraControls.addEventListener("change", render);
 
-  const textureMap = new THREE.TextureLoader().load("src/textures/tex1.jpeg");
-  textureMap.wrapS = textureMap.wrapT = THREE.RepeatWrapping;
+  const textureMap = new MYGLAPI.TextureLoader().load("src/textures/tex1.jpeg");
+  textureMap.wrapS = textureMap.wrapT = MYGLAPI.RepeatWrapping;
   textureMap.anisotropy = 16;
-  textureMap.encoding = THREE.sRGBEncoding;
+  textureMap.encoding = MYGLAPI.sRGBEncoding;
 
-  const materialColor = new THREE.Color();
+  const materialColor = new MYGLAPI.Color();
   materialColor.setRGB(1.0, 1.0, 1.0);
 
-  wireMaterial = new THREE.MeshBasicMaterial({
+  wireMaterial = new MYGLAPI.MeshBasicMaterial({
     color: 0xffffff,
     wireframe: true,
   });
 
-  flatMaterial = new THREE.MeshPhongMaterial({
+  flatMaterial = new MYGLAPI.MeshPhongMaterial({
     color: materialColor,
     specular: 0x000000,
     flatShading: true,
-    side: THREE.DoubleSide,
+    side: MYGLAPI.DoubleSide,
   });
 
-  gouraudMaterial = new THREE.MeshLambertMaterial({
+  gouraudMaterial = new MYGLAPI.MeshLambertMaterial({
     color: materialColor,
-    side: THREE.DoubleSide,
+    side: MYGLAPI.DoubleSide,
   });
 
-  phongMaterial = new THREE.MeshPhongMaterial({
+  phongMaterial = new MYGLAPI.MeshPhongMaterial({
     color: materialColor,
-    side: THREE.DoubleSide,
+    side: MYGLAPI.DoubleSide,
   });
 
-  texturedMaterial = new THREE.MeshPhongMaterial({
+  texturedMaterial = new MYGLAPI.MeshPhongMaterial({
     color: materialColor,
     map: textureMap,
-    side: THREE.DoubleSide,
+    side: MYGLAPI.DoubleSide,
   });
 
-  scene = new THREE.Scene();
-  // const backTex = new THREE.TextureLoader().load("src/textures/back.jpeg");
-
-  scene.background = new THREE.TextureLoader().load("src/textures/back.jpeg");
-  // scene.background = new THREE.Color(0xaaaaaa);
-  // const loader = new THREE.TextureLoader();
-  // loader.load(
-  //   "https://images.pexels.com/photos/1205301/pexels-photo-1205301.jpeg",
-  //   function (texture) {
-  //     scene.background = texture;
-  //   }
-  // );
-
+  scene = new MYGLAPI.Scene();
+  scene.background = new MYGLAPI.TextureLoader().load(
+    "src/textures/back.jpeg",
+    render
+  );
   scene.add(ambientLight);
   scene.add(light);
 
@@ -121,17 +129,19 @@ function init() {
 }
 
 function createTextureMaterial(filename) {
-  const materialColor = new THREE.Color();
+  const materialColor = new MYGLAPI.Color();
   materialColor.setRGB(1.0, 1.0, 1.0);
-  const textureMap = new THREE.TextureLoader().load(`src/textures/${filename}`);
-  // const textureMap = new THREE.TextureLoader().load("src/textures/tex1.jpeg");
-  textureMap.wrapS = textureMap.wrapT = THREE.RepeatWrapping;
+  const textureMap = new MYGLAPI.TextureLoader().load(
+    `src/textures/${filename}`,
+    render
+  );
+  textureMap.wrapS = textureMap.wrapT = MYGLAPI.RepeatWrapping;
   textureMap.anisotropy = 16;
-  textureMap.encoding = THREE.sRGBEncoding;
-  return (texturedMaterial = new THREE.MeshPhongMaterial({
+  textureMap.encoding = MYGLAPI.sRGBEncoding;
+  return (texturedMaterial = new MYGLAPI.MeshPhongMaterial({
     color: materialColor,
     map: textureMap,
-    side: THREE.DoubleSide,
+    side: MYGLAPI.DoubleSide,
   }));
 }
 
@@ -172,25 +182,26 @@ function setupGui() {
     body: true,
     fitLid: false,
     nonblinn: false,
-    newShading: "flat",
+    // newShading: "textured",
+    newShading: "wireframe",
   };
 
   let h;
 
   const gui = new GUI();
 
-  h = gui.addFolder("Material control");
+  // h = gui.addFolder("Material control");
 
-  h.add(effectController, "shininess", 1.0, 400.0, 1.0)
-    .name("shininess")
-    .onChange(render);
-  h.add(effectController, "kd", 0.0, 1.0, 0.025)
-    .name("diffuse strength")
-    .onChange(render);
-  h.add(effectController, "ks", 0.0, 1.0, 0.025)
-    .name("specular strength")
-    .onChange(render);
-  h.add(effectController, "metallic").onChange(render);
+  // h.add(effectController, "shininess", 1.0, 400.0, 1.0)
+  //   .name("shininess")
+  //   .onChange(render);
+  // h.add(effectController, "kd", 0.0, 1.0, 0.025)
+  //   .name("diffuse strength")
+  //   .onChange(render);
+  // h.add(effectController, "ks", 0.0, 1.0, 0.025)
+  //   .name("specular strength")
+  //   .onChange(render);
+  // h.add(effectController, "metallic").onChange(render);
 
   h = gui.addFolder("Material color");
 
@@ -221,17 +232,17 @@ function setupGui() {
   h.add(effectController, "ly", -1.0, 1.0, 0.025).name("y").onChange(render);
   h.add(effectController, "lz", -1.0, 1.0, 0.025).name("z").onChange(render);
 
-  h = gui.addFolder("Tessellation control");
-  h.add(effectController, "newTess", [2, 3, 4, 5, 6, 8, 10, 15, 20, 30, 40, 50])
-    .name("Tessellation Level")
-    .onChange(render);
+  // h = gui.addFolder("Tessellation control");
+  // h.add(effectController, "newTess", [2, 3, 4, 5, 6, 8, 10, 15, 20, 30, 40, 50])
+  //   .name("Tessellation Level")
+  //   .onChange(render);
 
   gui
     .add(effectController, "newShading", [
       "wireframe",
-      "flat",
-      "smooth",
-      "glossy",
+      // "flat",
+      // "smooth",
+      // "glossy",
       "textured",
     ])
     .name("Shading")
@@ -299,93 +310,63 @@ function render() {
     effectController.lsaturation,
     effectController.llightness
   );
-  // scene.background = null;
 
   renderer.render(scene, camera);
 }
 
 function createNewTeapot() {
-  if (teapot !== undefined) {
-    teapot.geometry.dispose();
-    scene.remove(teapot);
+  if (mainUmbrella !== undefined) {
+    // mainUmbrella.geometry.dispose();
+    scene.remove(mainUmbrella);
   }
 
-  // const teapotGeometry = new TeapotGeometry(
-  //   defaultSize,
-  //   tess,
-  //   effectController.bottom,
-  //   effectController.lid,
-  //   effectController.body,
-  //   effectController.fitLid,
-  //   !effectController.nonblinn
-  // );
+  // const part1Texs = [
+  //   createTextureMaterial("p1_1.jpg"),
+  //   createTextureMaterial("p1_2.jpg"),
+  //   createTextureMaterial("p1_3.jpg"),
+  //   createTextureMaterial("p1_4.jpg"),
+  //   createTextureMaterial("p1_1.jpg"),
+  //   createTextureMaterial("p1_2.jpg"),
+  //   createTextureMaterial("p1_3.jpg"),
+  //   createTextureMaterial("p1_4.jpg"),
+  // ];
+  // shading === "wireframe" ? wireMaterial : part5Tex;
 
-  // teapot = new THREE.Mesh(
-  //   teapotGeometry,
-  //   shading === "wireframe"
-  //     ? wireMaterial
-  //     : shading === "flat"
-  //     ? flatMaterial
-  //     : shading === "smooth"
-  //     ? gouraudMaterial
-  //     : shading === "glossy"
-  //     ? phongMaterial
-  //     : texturedMaterial
-  // );
-
-  // scene.add(teapot);
-
-  const part1 = new THREE.Group();
+  const part1 = new MYGLAPI.Group();
 
   const part1Geometry = new Part1Geometry(0);
 
-  const part1_0 = new THREE.Mesh(
+  const part1_0 = new MYGLAPI.Mesh(
     part1Geometry,
-    createTextureMaterial("p1_1.jpg")
-    // shading === "wireframe"
-    //   ? wireMaterial
-    //   : shading === "flat"
-    //   ? flatMaterial
-    //   : shading === "smooth"
-    //   ? gouraudMaterial
-    //   : shading === "glossy"
-    //   ? phongMaterial
-    //   : texturedMaterial
+    shading === "wireframe" ? wireMaterial : textures.part1Texs[0]
   );
-  const part1_1 = new THREE.Mesh(
+  const part1_1 = new MYGLAPI.Mesh(
     new Part1Geometry(1),
-    createTextureMaterial("p1_2.jpg")
-    // new THREE.MeshBasicMaterial({ color: "purple", side: THREE.DoubleSide })
+    shading === "wireframe" ? wireMaterial : textures.part1Texs[1]
   );
-  const part1_2 = new THREE.Mesh(
+  const part1_2 = new MYGLAPI.Mesh(
     new Part1Geometry(2),
-    // new THREE.MeshBasicMaterial({ color: "purple", side: THREE.DoubleSide })
-    createTextureMaterial("p1_3.jpg")
+    shading === "wireframe" ? wireMaterial : textures.part1Texs[2]
   );
-  const part1_3 = new THREE.Mesh(
+  const part1_3 = new MYGLAPI.Mesh(
     new Part1Geometry(3),
-    // new THREE.MeshBasicMaterial({ color: "purple", side: THREE.DoubleSide })
-    createTextureMaterial("p1_4.jpg")
+    shading === "wireframe" ? wireMaterial : textures.part1Texs[3]
   );
-  const part1_4 = new THREE.Mesh(
+  const part1_4 = new MYGLAPI.Mesh(
     new Part1Geometry(4),
-    // new THREE.MeshBasicMaterial({ color: "purple", side: THREE.DoubleSide })
-    createTextureMaterial("p1_1.jpg")
+    shading === "wireframe" ? wireMaterial : textures.part1Texs[4]
   );
-  const part1_5 = new THREE.Mesh(
+  const part1_5 = new MYGLAPI.Mesh(
     new Part1Geometry(5),
-    // new THREE.MeshBasicMaterial({ color: "purple", side: THREE.DoubleSide })
-    createTextureMaterial("p1_2.jpg")
+    shading === "wireframe" ? wireMaterial : textures.part1Texs[5]
   );
-  const part1_6 = new THREE.Mesh(
+  const part1_6 = new MYGLAPI.Mesh(
     new Part1Geometry(6),
-    // new THREE.MeshBasicMaterial({ color: "purple", side: THREE.DoubleSide })
-    createTextureMaterial("p1_3.jpg")
+    shading === "wireframe" ? wireMaterial : textures.part1Texs[6]
   );
-  const part1_7 = new THREE.Mesh(
+  const part1_7 = new MYGLAPI.Mesh(
     new Part1Geometry(7),
-    // new THREE.MeshBasicMaterial({ color: "#12A3EE", side: THREE.DoubleSide })
-    createTextureMaterial("p1_4.jpg")
+    shading === "wireframe" ? wireMaterial : textures.part1Texs[7]
   );
   part1.add(part1_0);
   part1.add(part1_1);
@@ -405,25 +386,28 @@ function createNewTeapot() {
     effectController.fitLid,
     !effectController.nonblinn
   );
+  // const part2Tex = createTextureMaterial("wood1.jpeg");
 
-  const part2 = new THREE.Mesh(
+  const part2 = new MYGLAPI.Mesh(
     part2Geometry,
-    createTextureMaterial("wood1.jpeg")
+    shading === "wireframe" ? wireMaterial : textures.part2Tex
   );
+  // const part3Tex = createTextureMaterial("wood1.jpeg");
 
-  const part3Geometry = new THREE.CylinderGeometry(5, 5, 480, 3200);
-  const part3 = new THREE.Mesh(
+  const part3Geometry = new MYGLAPI.CylinderGeometry(5, 5, 480, 30);
+  const part3 = new MYGLAPI.Mesh(
     part3Geometry,
-    createTextureMaterial("wood1.jpeg")
+    shading === "wireframe" ? wireMaterial : textures.part3Tex
   );
 
   // part3.position.x = 10;
   part3.position.y = 185;
+  // const part4Tex = createTextureMaterial("gold1.jpeg");
 
-  const part4Geometry = new THREE.CylinderGeometry(7, 7, 40, 3200);
-  const part4 = new THREE.Mesh(
+  const part4Geometry = new MYGLAPI.CylinderGeometry(7, 7, 40, 30);
+  const part4 = new MYGLAPI.Mesh(
     part4Geometry,
-    createTextureMaterial("gold1.jpeg")
+    shading === "wireframe" ? wireMaterial : textures.part4Tex
   );
 
   // part4.position.x = 10;
@@ -454,21 +438,20 @@ function createNewTeapot() {
     const y = -2 * (1 - Math.cos(u) / 2) * Math.sin(v);
 
     target.set(x, y, z).multiplyScalar(3.75);
-    // target.set(x, y, z).multiplyScalar(0.75);
   }
   // FIXME:
   const slices = 20;
   // FIXME:
 
   const stacks = 20;
+  // const part5Tex = createTextureMaterial("tex2.jpeg");
 
-  const part5Geometry = new THREE.ParametricGeometry(klein, slices, stacks);
-  const part5 = new THREE.Mesh(
+  const part5Geometry = new MYGLAPI.ParametricGeometry(klein, slices, stacks);
+  const part5 = new MYGLAPI.Mesh(
     part5Geometry,
-    createTextureMaterial("tex2.jpeg")
+    shading === "wireframe" ? wireMaterial : textures.part5Tex
   );
 
-  // part5.position.x = 10;
   part5.position.y = -90;
   part5.rotation.z = -Math.PI / 4;
   part5.rotation.x = -Math.PI / 2;
@@ -478,15 +461,16 @@ function createNewTeapot() {
   const widthSegments = 20;
   // FIXME:
   const heightSegments = 20;
-  const part6Geometry = new THREE.SphereGeometry(
+  const part6Geometry = new MYGLAPI.SphereGeometry(
     radius,
     widthSegments,
     heightSegments
   );
+  // const part6Tex = createTextureMaterial("wood2.jpeg");
 
-  const part6 = new THREE.Mesh(
+  const part6 = new MYGLAPI.Mesh(
     part6Geometry,
-    createTextureMaterial("wood2.jpeg")
+    shading === "wireframe" ? wireMaterial : textures.part6Tex
   );
   part6.position.y = -20;
   const part7 = part6.clone();
@@ -498,7 +482,7 @@ function createNewTeapot() {
   const part10 = part6.clone();
   part10.position.y = 430;
 
-  class CustomSinCurve extends THREE.Curve {
+  class CustomSinCurve extends MYGLAPI.Curve {
     constructor(scale) {
       super();
       this.scale = scale;
@@ -507,11 +491,11 @@ function createNewTeapot() {
       const tx = t * 10 - 1.5;
       const ty = Math.sin(2 * Math.PI * t);
       const tz = 0;
-      return new THREE.Vector3(tx, ty, tz).multiplyScalar(this.scale);
+      return new MYGLAPI.Vector3(tx, ty, tz).multiplyScalar(this.scale);
     }
   }
 
-  const part11Geometry = new THREE.TubeGeometry(
+  const part11Geometry = new MYGLAPI.TubeGeometry(
     new CustomSinCurve(10),
     30,
     2.0,
@@ -519,24 +503,15 @@ function createNewTeapot() {
     10,
     false
   );
-  const part11 = new THREE.Mesh(
+  const part11 = new MYGLAPI.Mesh(
     part11Geometry,
-    shading === "wireframe"
-      ? wireMaterial
-      : shading === "flat"
-      ? flatMaterial
-      : shading === "smooth"
-      ? gouraudMaterial
-      : shading === "glossy"
-      ? phongMaterial
-      : texturedMaterial
+    shading === "wireframe" ? wireMaterial : flatMaterial
   );
   part11.position.y = 230;
   part11.position.x = -280;
   part11.rotation.z = Math.PI / 2;
 
-  const umbrella = new THREE.Group();
-  scene.add(umbrella);
+  const umbrella = new MYGLAPI.Group();
 
   umbrella.add(part1);
   // umbrella.add(part2);
@@ -553,16 +528,6 @@ function createNewTeapot() {
   umbrella.rotation.z += Math.PI / 5;
   umbrella.rotation.y += -Math.PI / 4;
   umbrella.rotation.x += -Math.PI / 8;
-
-  // scene.add(part1);
-  // // scene.add(part2);
-  // scene.add(part3);
-  // scene.add(part4);
-  // scene.add(part5);
-  // scene.add(part6);
-  // scene.add(part7);
-  // scene.add(part8);
-  // scene.add(part9);
-  // scene.add(part10);
-  // scene.add(part11);
+  mainUmbrella = umbrella;
+  scene.add(mainUmbrella);
 }

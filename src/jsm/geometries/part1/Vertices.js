@@ -12,16 +12,12 @@ const genPart1_ = () => {
   const K = 4;
   for (let i = 0; i < K; i++) {
     const rad = (Math.PI / (3 * K)) * i;
-    // const [x, y] = pStart;
-    // const x_ = x * Math.cos(rad) - y * Math.sin(rad);
-    // const y_ = x * Math.sin(rad) + y * Math.cos(rad);
     const [xEnd] = pEnd;
     const yEnd = pEnd[1] * cYScale[i];
     const zEnd = (pStart[2] - pEnd[2]) * cZScale[i];
     points[K * i] = pStart;
 
     const x = xEnd;
-    // const y = (yEnd / (K - 1)) * 1;
     let y = (yEnd / yCoef.reduce((a, b) => a + b)) * yCoef[0];
     let z = (zEnd / zCoef.reduce((a, b) => a + b)) * zCoef[0] + localZ0;
     {
@@ -30,7 +26,6 @@ const genPart1_ = () => {
       points[K * i + 1] = [x_, y_, z];
     }
 
-    // const y = (yEnd / (K - 1)) * 2;
     y += (yEnd / yCoef.reduce((a, b) => a + b)) * yCoef[1];
     z -= (zEnd / zCoef.reduce((a, b) => a + b)) * zCoef[1];
     {
@@ -38,8 +33,6 @@ const genPart1_ = () => {
       const y_ = x * Math.sin(rad) + y * Math.cos(rad);
       points[K * i + 2] = [x_, y_, z];
     }
-
-    // const y = (yEnd / (K - 1)) * 3;
     y += (yEnd / yCoef.reduce((a, b) => a + b)) * yCoef[2];
     z -= (zEnd / zCoef.reduce((a, b) => a + b)) * zCoef[2];
     {

@@ -50,7 +50,7 @@ select {
   -ms-user-select: none;
   user-select: none;
   z-index: 2 !important;
-  display: none;
+  /* display: none; */
 }
 
 #overlay {
